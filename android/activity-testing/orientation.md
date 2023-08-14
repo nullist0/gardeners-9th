@@ -38,7 +38,6 @@ class ActivityScenario {
 이때 `MainLooper`를 blocking하므로 `WindowManager`에서 실행하는 configuration change를 바로 실행할 수 없다. 그러므로 화면 회전에 의한 assertion을 하고 싶다면, `onActivity`를 하나로 끊어서 처리해야한다.
 
 ```kt
-
 private lateinit var scenario: ActivityScenario<SampleActivity>
 
 @Before
@@ -67,5 +66,4 @@ fun goodTest() {
     }
     // assert with some effect by the configuration change...
 }
-
 ```
