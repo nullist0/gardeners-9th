@@ -67,3 +67,5 @@ fun goodTest() {
     // assert with some effect by the configuration change...
 }
 ```
+
+또한 Robolectrics가 알지 못하는 `Activity`에 대해 자동으로 Manifest를 작성해주고 있었지만 Manifest를 작성해주지 않도록 변경되면서 빌드에 따라서 접근가능한 `Activity`가 변경되는 경우에는 이에 대한 처리를 해주어야 한다. 예를 들어 `:sample` 모듈에 `Activity`가 정의되어있고, `production` 빌드에서 제외된다면, `production` 빌드로 unit test를 실행할 때 fail이 발생하게 된다. 이러한 경우 해당 모듈도 같이 빌드하는 phase에 대한 test 폴더에 파일을 옮겨 주어야 한다.
