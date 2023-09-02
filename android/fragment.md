@@ -13,13 +13,11 @@ Fragment에는 아래와 같은 구성 요소를 갖는다.
 - Fragment Transaction: Fragment를 Backstack의 원소로써 관리한다.
 - Fragment Lifecycle: Fragment의 Lifecycle에 맞는 데이터를 관리한다.
 
-각각을 알아보도록 하자.
-
-// TODO
-
 ## FragmentManager
 
-## Framgnet Transaction
+`FragmentManager`는 `Fragment`를 추가하고 삭제하는 책임을 갖는 클래스이다. 이때  `Fragment`를 추가하고 관리하기 위해 `FragmentTransaction`을 생성하고 이를 Android Handler를 통해 실행시킨다. `Fragment`는 자신만의 Back stack을 갖기 때문에 해당 `FragmentTransaction`이 역순으로 처리될 수 있도록 구현이 되어있다. 예를 들어 추가하는 Transaction은 backstack에서 pop될 때 삭제하는 처리를 하게 된다.
+
+// TODO
 
 ## Fragment Lifecycle
 
