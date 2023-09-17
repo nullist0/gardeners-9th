@@ -20,7 +20,7 @@ https://square.github.io/kotlinpoet/
 
 코틀린 언어 스펙에 있는 모든 내용을 추가한 것이라고 생각하면 된다. 여기서는 Generic과 관련한 내용만을 간단하게 다룬다.
 
-### Example
+### Example without arguments
 
 ```kt
 // interface
@@ -81,6 +81,73 @@ class AutoCompoentFactorySymbolProcessor(
         ).parameterizedBy(classDeclaration.toClassName())
         val createFunSpec = FunSpec.builder("get")
             .addStatement("return %T()", classDeclaration.toClassName())
+            .returns(classDeclaration.toClassName())
+            .build()
+
+        val componentFactoryTypeSpec = TypeSpec.classBuilder(factoryClassName)
+                .superclass(componentFactoryClassName)
+                .addFunction(createFunSpec)
+                .build()
+        FileSpec.builder(factoryClassName)
+                .addType(componentFactoryTypeSpec)
+                .build()
+                .writeTo(codeGenerator, Dependencies.ALL_FILES)
+    }
+}
+```
+
+### Example with arguments
+
+```kt
+// annotated
+package com.example.service
+
+@AutoComponentFactory
+class TestTarget(
+    val arg: Argument
+)
+
+// argument class
+package com.example.argument
+
+@AutoComponentFactory
+class Argument
+
+// generated
+package com.example.service
+
+import com.component.generic.Component
+import com.example.argument.ArguementFactory
+
+class TestTargetFactory: Componenet<TestTarget> {
+    fun get(): TestTarget = TestTarget(
+        arg = ArguementFactory().get()
+    )
+}
+```
+
+
+#### Make factory classes
+```kt
+class AutoCompoentFactorySymbolProcessor(
+    private val codeGenerator: CodeGenerator
+): SymbolProcessor {
+    private fun createAutoLichComponent(classDeclaration: KSClassDeclaration) {
+        val factoryClassName = ClassName(
+                classDeclaration.packageName.asString(),
+                "${classDeclaration.simpleName.asString()}Factory"
+        )
+        val componentFactoryClassName = ClassName(
+            "com.component.generic",
+            "Component"
+        ).parameterizedBy(classDeclaration.toClassName())
+                val constructorParameters = classDeclaration.primaryConstructor?.parameters ?: emptyList()
+        val parameterArguments = constructorParameters.joinToString { "${it.name!!.asString()} = %T().get()" }
+        val factoryClassNames = constructorParameters
+            .map { it.type.resolve().declaration }
+            .map { ClassName(it.packageName.asString(), "${it.simpleName.asString()}Factory") }
+        val getFunSpec = FunSpec.builder("get")
+            .addStatement("return %T($parameterArguments)", classDeclaration.toClassName(), *factoryClassNames.toTypedArray())
             .returns(classDeclaration.toClassName())
             .build()
 
