@@ -121,3 +121,123 @@ fun test() = runTest {
 ### Conclusion
 
 이렇게 개발하자는 의미가 아니라, 개발 편의성이 부족하면 필요한 아키텍처를 개발하는 것이 좋다는 걸 보이고 싶었다.
+
+## Session 7. 빈혈 도메인 모델과 쓸모 없는 유스케이스, 그리고 비대한 뷰모델에 대해 생각해보기
+
+### Example
+Android Architecture에서 말하는 MVVM으로 아래의 유스케이스를 구현한다고 생각해보자.
+
+- 메시지를 한번에 가져온다.
+- 메시지를 문자열로 검색할 수 있다.
+
+#### Domain Model
+```kotlin
+data class Message(
+    val id: Int,
+    val messageText: String
+)
+
+data class MessageList(val messages: List<Message>)
+```
+
+#### Use Case
+```kotlin
+class GetMessageListUseCase(
+    private val messageRepository: MessageRepository
+) {
+    operator fun invoke(): MessageList =
+        messageRepository.getMessageList()
+}
+```
+
+#### ViewModel
+```kotlin
+class MessageListViewModel(
+    getMessageList: GetMessageListUseCase
+) {
+    private val messageListMutableLiveData = MutableLiveData<MessageList>()
+    val messageListLiveData: LiveData<MessageData> = messageListMutableLiveData
+
+    init {
+        messageListMutableLiveData.value = getMessageList()
+    }
+
+    fun searchByMessageText(text: String) {
+        messageListMutableLiveData.value = MessageList(
+            getMessageList().messages.filter { text in it.messageText }
+        )
+    }
+}
+```
+
+#### Problems
+위의 예제에서 몇가지 이상한 점들이 있다.
+
+- Domain Model을 C의 `struct`와 같이 사용하고 있다.
+- UseCase가 단순히 Repository로 delegate하고 있다.
+- ViewModel에서 search라는 구현을 하고 있다.
+
+위처럼 구현해도 문제는 없지만 좀 더 나은 구현을 할수는 없을까?
+
+### More better approach with reasons
+
+학부에서 배웠던 SOLID로 다시 돌아가보자. SRP가 여기서 중요하게 된다.
+
+#### What are responsibilities?
+
+각 요소의 책임은 무엇일까? 여러 관점이 있어 팀내에서의 관점을 정리하는 것이 중요하다.
+
+- ViewModel?
+  - Model of View?
+  - View of Model?
+
+![UseCaseVsDomain](https://player.slideplayer.com/83/13605623/slides/slide_4.jpg)
+
+- UseCase vs Domain
+  - UseCase: Actor의 관점
+  - Domain: 개념적 관점
+
+#### Example of Rule
+
+지그재그에서는 아래와 같은 룰을 적용하고 있다.
+
+- Presentation model과 domain model은 같지 않다.
+- 단일 domain business logic은 최대한 해당 domain model에 추가한다.
+- 여러 domain model의 경우에는 UseCase의 로직으로 추가한다.
+- 단일 domain model의 로직이 UseCase로 노출되어야하는 경우에는 `fun interface`와 DI를 이용하여 주입한다.
+
+```kotlin
+data class Message(
+    val id: Int,
+    val messageText: String
+)
+
+data class MessageList(val messages: List<Message>) {
+    fun search(text: String): MessageList = 
+        copy(messages = messages.filter { text in it.messageText })
+}
+
+fun interface  GetMessageListUseCase {
+    operator fun invoke(): MessageList
+}
+
+// DI registeration
+diContainer.inject<GetMessageListUseCase>(
+    messageRepository::getMessageList
+)
+
+class MessageListViewModel(
+    getMessageList: GetMessageListUseCase
+) {
+    private val messageListMutableLiveData = MutableLiveData<MessageList>()
+    val messageListLiveData: LiveData<MessageData> = messageListMutableLiveData
+
+    init {
+        messageListMutableLiveData.value = getMessageList()
+    }
+
+    fun searchByMessageText(text: String) {
+        messageListMutableLiveData.value = getMessageList().search(text)
+    }
+}
+```
