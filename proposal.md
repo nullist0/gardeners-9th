@@ -116,8 +116,8 @@ fun <T> Context.getComponent(factory: ComponentFactory<T>): T {
 // The extras[APPLICATION_KEY] is application object so there is no way to determine whether the given context is bounded to lifecylce.
 // So a new API will be needed to support components in ViewModel.
 fun <T> CreationExtras.getComponent(factory: ComponentFactory<T>): T {
-    val context = this[APPLICATION_KEY]
-    val viewModelStoreOwner = this[VIEW_MODEL_STORE_OWNER_KEY]
+    val context = requireNotNull(this[APPLICATION_KEY])
+    val viewModelStoreOwner = requireNotNull(this[VIEW_MODEL_STORE_OWNER_KEY])
 
     return componentProvider.getComponent(context, factory, viewModelStoreOwner)
 }
